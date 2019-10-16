@@ -22,70 +22,33 @@ router.post("/register", (req, res) => {
 
 router.post("/login", (req, res) => {
   let { username, password } = req.body;
-  if (username && password) {
-    Users.findBy({ username })
-      .first()
-      .then(user => {
-        if (user && bcrypt.compare(password, user.password)) {
-          res.status(200).json({ message: `Welcome ${user.username}` });
-        } else {
-          res.status(401).json({ message: "You shall not pass!" });
-        }
-      })
-      .catch(err => {
-        res.status(500).json(err);
-      });
-  } else {
-    res.status(400).json({ message: "Please provide credentials" });
-  }
-});
 
-router.get("/users", Protected, (req, res) => {
-  Users.find()
-    .then(users => {
-      res.status(200).json(users);
-    })
-    .catch(err => {
-      res.status(500).send(err);
-    });
-});
-
-router.get("/users/:id", Protected, (req, res) => {
-  Users.findById(req.params.id)
+  Users.findBy({ username })
+    .first()
     .then(user => {
-      res.status(200).json(user);
-    })
-    .catch(err => {
-      res.status(500).send(err);
-    });
-});
-
-router.put("/users/:id", Protected, (req, res) => {
-  const changes = req.body;
-  const id = req.params.id;
-
-  Users.updateUser({ ...changes }, id)
-    .then(updateUser => {
-      res.status(200).json(updateUser);
-    })
-    .catch(err => {
-      res.status(500).json({ message: "fail to update user." });
-    });
-});
-
-router.delete("/users/:id", Protected, (req, res) => {
-  const id = req.params.id;
-  Users.deleteUser(id)
-    .then(deleted => {
-      if (deleted) {
-        res.status(200).json({ removed: deleted });
+      if (user && bcrypt.compare(password, user.password)) {
+        req.session.username = user.username;
+        res.status(200).json({ message: `Welcome ${user.username}` });
       } else {
-        res.status(404).json({ message: "Could not find user with given id" });
+        res.status(401).json({ message: "You shall not pass!" });
       }
     })
     .catch(err => {
-      res.status(500).json({ message: "Failed to delete user." });
+      res.status(500).json(err);
     });
+});
+
+router.get("/logout", (req, res) => {
+  if (req.session) {
+    req.session.destroy(err => {
+      res.status(200).json({
+        message:
+          "you can check out any time you like, but you can never leave!!!",
+      });
+    });
+  } else {
+    res.status(200).json({ message: "already logged out" });
+  }
 });
 
 module.exports = router;
